@@ -29,17 +29,11 @@ app.get('/', function(req, res) {
   res.send('Hello! The API is at http://localhost:' + port + '/api');
 });
  
-
-// demo Route (GET http://localhost:8080)
-// ...
  
 // connect to database
 mongoose.connect(config.database);
 
 
-
-
- 
 // pass passport for configuration
 require('./config/passport')(passport);
  
@@ -102,8 +96,8 @@ apiRoutes.post('/authenticate', function(req, res) {
 // route to a restricted info (GET http://localhost:8080/api/memberinfo)
 apiRoutes.get('/memberinfo', passport.authenticate('jwt', { session: false}), function(req, res) {
   var token = getToken(req.headers);
-  console.log('token: '+token);
-  console.log('hello');
+  // console.log('token: '+token);
+  // console.log('hello');
 
 
   if (token) {
@@ -151,25 +145,70 @@ apiRoutes.get('/memberinfo', passport.authenticate('jwt', { session: false}), fu
     
   }});
 
-  apiRoutes.get('/memberaddcontact',passport.authenticate('jwt', { session: false}),function(req, res) {
+  apiRoutes.get('/member/viewcontact',passport.authenticate('jwt', { session: false}),function(req, res) {
 
       var htoken = getToken(req.headers);
-
-
+      // console.log(htoken);
 
   if (htoken) {
 
-console.log(htoken);
+  	 var decoded = jwt.decode(htoken, config.secret);
+     var name = decoded.name
 
 Contact.find({token: htoken},function(err, contacts) {
 
       if (err)
         res.send(err);
 
+      // res.json('Conatcts of '+name);
       res.json(contacts);
     });
 
   }});
+
+
+apiRoutes.get('/member/searchcontact/:email',passport.authenticate('jwt', { session: false}),function(req,res) {
+
+	// get the contact with that id
+ var htoken = getToken(req.headers);
+
+
+  if (htoken) { 
+
+
+     var decoded = jwt.decode(htoken, config.secret);
+     var name = decoded.name
+  				
+		Contact.find({email:req.params.email,token: htoken}, function(err, contact) {
+			if (err)
+				res.send(err);
+			
+      // res.json('Conatcts of '+name);
+      res.json(contact);
+
+
+		});
+
+
+	}});
+
+		
+
+apiRoutes.delete('/member/deletecontact/:email',passport.authenticate('jwt', { session: false}),function(req,res) {
+
+	 var htoken = getToken(req.headers);
+
+     if (htoken) { 
+
+   
+
+		Contact.remove({email:req.params.email,token: htoken}, function(err, contact) {
+			if (err)
+				res.send(err);
+
+			res.json({ message: 'Successfully deleted' });
+		});
+	}});
 
 
 getToken = function (headers) {
